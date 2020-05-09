@@ -4,6 +4,8 @@
 2. One button to invite players 
 3. One button to rearrange groups.
 
+## Install 
+Download and copy to \_classic\_/interface/addon
 ## Import raid layout from google sheet
 
 ### Step 1: Create your raid layout as below.
