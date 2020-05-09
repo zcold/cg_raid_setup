@@ -22,6 +22,7 @@ The description of this setup, not used at this moment.
 #### B18:E29: raid setup
 Raid setup layout
 #### B37: import string
-copy the content of this cell to __CG Raid Setup Import__'s import string
+Copy the content of this cell to __CG Raid Setup Import__'s import string
 =cgrs(B16:E29)
+The function is in CGRS.gs use the content as a [custom function for google sheet](https://developers.google.com/apps-script/guides/sheets/functions)
 
