@@ -88,16 +88,13 @@ function CG_Raid_Setup:UpdateGroupSetup(name)
     type = "toggle",
     width = "full",
     set = function(info, enabled)
+      for setup, _ in pairs(CG_DATA) do
+        CG_DATA[setup].enabled = false
+        self.options.args[setup].name = setup
+      end
       CG_DATA[name].enabled = enabled
       if enabled then
         self.options.args[name].name = "> "..name.."<"
-      else
-        self.options.args[name].name = name
-      end
-      for setup, _ in pairs(CG_DATA) do
-        if setup ~= name then
-          CG_DATA[name].enabled = false
-        end
       end
     end,
     get = function(info) return CG_DATA[name].enabled end,
@@ -192,24 +189,13 @@ function CG_Raid_Setup:UpdateGroupSetup(name)
     name = "Invite this setup",
     type = "execute",
     func = function(info, ...)
-      ConvertToRaid()
-      for g=1,8 do
-        for s=1,5 do
-          local p = CG_DATA[name][tostring(g)][tostring(s)]
-          if p ~= nil then
-            if p ~= self.my_name then
-              InviteUnit(p)
-            end
-          end
-        end
-      end
+      self:InviteAll(name)
     end,
     width = 1,
     confirm = function() return "Invite all? Party will be converted to raid." end,
   }
   order_index = order_index + 1
   self.options.args[name].args.regroup_setup = {
-  -- TODO: arrange this raid setup
     order = order_index,
     name = "Rearrange setup",
     desc = "Rearrange this setup",
@@ -510,15 +496,13 @@ function CG_Raid_Setup:NewOptions()
           CG_DATA[setup].current_g = tonumber(g)
           state = tonumber(s)
         elseif state == "name_group" then
-          CG_DATA[setup].name_group[n] = {group=g, slot=s}
-          CG_DATA[setup][g][s] = n
+          self:UpdateCDSetup(setup, n, g, s)
         else
           if current_index < state then
             current_index = current_index + 1
             CG_DATA[setup].special_member[n] = g:gsub("-", " "):gsub("=", "|")
           else
-            CG_DATA[setup].name_group[n] = {group=g, slot=s}
-            CG_DATA[setup][g][s] = n
+            self:UpdateCDSetup(setup, n, g, s)
             state = "name_group"
           end
         end
@@ -569,7 +553,31 @@ function CG_Raid_Setup:ChatCommand(input)
     return
   end
 
-  LibStub("AceConfigCmd-3.0"):HandleCommand("cgc", app_name, input)
+  if input == "sort" then
+    for setup, args in pairs(CG_DATA) do
+      if args.enabled then
+        self:Print("Sorting " .. setup)
+        self:RearrangeGroup(setup)
+        return
+      end
+    end
+    self:Print("No active setup.")
+    return
+  end
+
+  if input == "inv" then
+    for setup, args in pairs(CG_DATA) do
+      if args.enabled then
+        self:Print("Invite players in " .. setup)
+        self:InviteAll(setup)
+        return
+      end
+    end
+    self:Print("No active setup.")
+    return
+  end
+
+  LibStub("AceConfigCmd-3.0"):HandleCommand("cgc", self.options.name, input)
 end
 
 -- invite player
@@ -578,7 +586,6 @@ function CG_Raid_Setup:InviteGroup(msg, player_name)
   for name, args in pairs(CG_DATA) do
     if args.enabled then
       msg = msg:gsub("^%s+", "")
-      print(msg, player_name)
       if string.match(msg, args.invite_prefix) then
         if self.my_name ~= player_name then
           if GetNumGroupMembers() == 5 then ConvertToRaid() end
@@ -587,7 +594,6 @@ function CG_Raid_Setup:InviteGroup(msg, player_name)
         return
       end
       if string.match(msg, args.invite_prefix.." ") then
-        print(msg, player_name)
         local group = tonumber(string.match(msg, "%d") or "-1")
         if self.my_name ~= player_name then
           if GetNumGroupMembers() == 5 then
@@ -623,64 +629,78 @@ end
 function CG_Raid_Setup:UpdateRaidInfo()
   self.current_players_in_group = {}
   self.current_raid_group = {}
-  for i=1,8 do self.current_players_in_group[i] = 0 end
+  self.current_raid_group_players = {}
+  for i=1,8 do
+    self.current_players_in_group[i] = 0
+    self.current_raid_group_players[i] = {}
+  end
   for i=1,GetNumGroupMembers() do
-    name, _, group = GetRaidRosterInfo(i)
-    name = name:lower()
+    player_name, _, group = GetRaidRosterInfo(i)
+    player_name = player_name:lower()
     group = tonumber(group)
     self.current_players_in_group[group] = self.current_players_in_group[group] + 1
-    self.current_raid_group[name] = { index = i, group = group }
+    self.current_raid_group[player_name] = { index = i, group = group }
+    self.current_raid_group_players[group][player_name] = i
   end
 end
 
-function CG_Raid_Setup:PutInGroup(setup, name, ig)
-  local grp_ok = false
-  if CG_DATA[setup].name_group[name] == nil then
-    self:Print(name.." no preferred group")
-  else
-    local want = tonumber(CG_DATA[setup].name_group[name].group)
-    local index = ig.index
-    local now = ig.group
-    if now ~= want then
-      if self.current_players_in_group[want] < 5 then
-      -- move to empty slot
-        SetRaidSubgroup(index, want)
-        grp_ok = true
-      else
-      -- swap with another player
-        for current_name, current_ig in pairs(self.current_raid_group) do
-          if current_name ~= name then
-            if current_ig.group == want and CG_DATA[setup].name_group[current_name] ~= want then
-              -- swap to a player not in this group
-              SwapRaidSubgroup(ig.index, current_ig.index)
-              grp_ok = true
-              break
-            end
-          end
-        end
-      end
-    else
-      grp_ok = true
-    end
-    if not grp_ok then
-      self:Print("分组不成功 ".. want .." 满了.")
+function CG_Raid_Setup:PutInGroup(setup, player_name, group)
+  self:UpdateRaidInfo()
+  -- do nothing if player is not in raid
+  if self.current_raid_group[player_name] == nil then
+    return
+  end
+
+  local current = self.current_raid_group[player_name]
+
+  -- player is already in place
+  if current.group == group then
+    return
+  end
+
+  -- move to empty slot
+  if self.current_players_in_group[group] < 5 then
+    SetRaidSubgroup(current.index, group)
+    return
+  end
+
+  -- swap with another player
+  for name, index in pairs(self.current_raid_group_players[group]) do
+    -- player: name should not in this group
+    if CG_DATA[setup].name_group[name] ~= group then
+      SwapRaidSubgroup(current.index, index)
+      return
     end
   end
 end
 
 function CG_Raid_Setup:RearrangeGroup(setup)
+  -- only works in raid
   if not IsInRaid() then
     return
   end
-  local grp_ok = false
-  local name_group = {}
+
+  for group=1,8 do
+    for slot=1,5 do
+      -- player_name wants to be placed in group slot
+      local player_name = CG_DATA[setup][tostring(group)][tostring(slot)]
+      if player_name ~= nil then
+        -- if player_name is in current raid, put him/her to the intended slot
+        self:PutInGroup(setup, player_name, group)
+      end
+    end
+  end
+end
+
+function CG_Raid_Setup:InviteAll(setup)
+  ConvertToRaid()
   self:UpdateRaidInfo()
-  for g=1,8 do
-    for s=1,5 do
-      local n = CG_DATA[setup][tostring(g)][tostring(s)]
-      if n ~= nil then
-        if self.current_raid_group[n] ~= nul then
-          self:PutInGroup(setup, n, self.current_raid_group[n])
+  for group=1,8 do
+    for slot=1,5 do
+      local player_name = CG_DATA[setup][tostring(group)][tostring(slot)]
+      if self.current_raid_group[player_name] == nil then
+        if player_name ~= self.my_name then
+          InviteUnit(player_name)
         end
       end
     end
