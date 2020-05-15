@@ -1,6 +1,6 @@
 ## Interface: 11304
 ## Title: CG_Raid_Setup
-## Version: 1.0.1
+## Version: 1.0.2
 ## License: MIT
 ## Notes: Sign for raid, raid invite and group arrangement
 ## SavedVariables: CG_DATA CG_SELF
