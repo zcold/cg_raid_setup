@@ -677,7 +677,7 @@ function CG_Raid_Setup:RearrangeGroup(setup)
   self:UpdateRaidInfo()
   for g=1,8 do
     for s=1,5 do
-      local n = CD_DATA[setup][tostring(g)][tostring(s)]
+      local n = CG_DATA[setup][tostring(g)][tostring(s)]
       if n ~= nil then
         if self.current_raid_group[n] ~= nul then
           self:PutInGroup(setup, n, self.current_raid_group[n])
