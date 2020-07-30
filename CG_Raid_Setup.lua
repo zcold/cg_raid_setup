@@ -1,6 +1,7 @@
 local AceConfig = LibStub("AceConfig-3.0")
 local AceConfigDialog = LibStub("AceConfigDialog-3.0")
 local AceSerializer = LibStub("AceSerializer-3.0")
+local AceGUI = LibStub("AceGUI-3.0")
 
 local CG_Raid_Setup = LibStub("AceAddon-3.0"):NewAddon("CG_Raid_Setup", "AceConsole-3.0", "AceEvent-3.0")
 local app_name = "CG_Raid_Setup"
@@ -16,6 +17,142 @@ local function get_display(name)
   _, _, _, color = GetClassColor(englishClass)
   return "|c" .. color .. " "..name.."|r"
 end
+
+--function CG_Raid_Setup:LastMonth()
+--  if self.month == 1 then
+--    self.year = self.year - 1
+--    self.month = 12
+--  else
+--    self.month = self.month - 1
+--  end
+--  return string.format("%04d-%02d", self.year, self.month)
+--end
+
+--function CG_Raid_Setup:NextMonth()
+--  if self.month == 12 then
+--    self.year = self.year + 1
+--    self.month = 1
+--  else
+--    self.month = self.month + 1
+--  end
+--  return string.format("%04d-%02d", self.year, self.month)
+--end
+
+--function CG_Raid_Setup:CreateMonthSelector()
+--  local month_selection_group = AceGUI:Create("SimpleGroup")
+--  local next_month_button = AceGUI:Create("Button")
+--  local month_label = AceGUI:Create("Heading")
+--  local last_month_button = AceGUI:Create("Button")
+
+--  month_selection_group:SetWidth(320)
+--  month_selection_group:SetLayout("Flow")
+--  month_selection_group:AddChild(last_month_button)
+--  month_selection_group:AddChild(month_label)
+--  month_selection_group:AddChild(next_month_button)
+
+--  month_label:SetText(date("%Y-%m"))
+--  month_label:SetRelativeWidth(0.6)
+
+--  last_month_button:SetText("<")
+--  last_month_button:SetRelativeWidth(0.2)
+--  last_month_button:SetCallback("OnClick", function(...)
+--    month_label:SetText(self:LastMonth())
+--  end)
+--  next_month_button:SetText(">")
+--  next_month_button:SetRelativeWidth(0.2)
+--  next_month_button:SetCallback("OnClick", function(...)
+--    month_label:SetText(self:NextMonth())
+--  end)
+--  self.calendar_tab:AddChild(month_selection_group)
+--end
+
+--function CG_Raid_Setup:CalendarTabContent()
+
+--  self:CreateMonthSelector()
+
+--  local calendar_content = AceGUI:Create("SimpleGroup")
+--  calendar_content:SetLayout("Flow")
+--  calendar_content:SetWidth(320)
+
+--  local header = AceGUI:Create("SimpleGroup")
+--  header:SetLayout("Flow")
+--  header:SetRelativeWidth(1)
+--  for _, v in ipairs(self.weekdays) do
+--    local _label = AceGUI:Create("Label")
+--    _label:SetText(v)
+--    _label:SetRelativeWidth(0.14)
+--    header:AddChild(_label)
+--  end
+--  calendar_content:AddChild(header)
+
+--  self.monthdays = self:GetMonthDays()
+--  local day = {}
+--  local today = date("%w")+1
+
+--  for i=1, self.monthdays do
+--    day[i] = (((date("%d")-i) % 7) + today) % 7
+--    print(day[i])
+--  end
+--  self.calendar_tab:AddChild(calendar_content)
+--end
+
+--function CG_Raid_Setup:GetMonthDays()
+--  local monthdays = {
+--    31, --  1
+--    28, --  2
+--    31, --  3
+--    30, --  4
+--    31, --  5
+--    30, --  6
+--    31, --  7
+--    31, --  8
+--    30, --  9
+--    31, -- 10
+--    30, -- 11
+--    31, -- 12
+--  }
+--  self.year = tonumber(self.year)
+--  if (self.year % 100 == 0) and (self.year % 400 == 0) then
+--    monthdays[2] = 29
+--  elseif (self.year % 100 ~= 0) and (self.year % 4 == 0) then
+--    monthdays[2] = 29
+--  end
+--  return monthdays[tonumber(self.month)]
+--end
+
+--function CG_Raid_Setup:CalendarGUI()
+--  self.year = date("%Y")
+--  self.month = date("%m")
+--  self.weekdays = {'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'}
+
+--  -- create frame
+--    self.calendar_gui = AceGUI:Create("Frame")
+--    self.calendar_gui:SetTitle("CG_Calendar")
+--    self.calendar_gui:SetWidth(1024)
+--    self.calendar_gui:SetStatusText("Current date "..date("%Y-%m-%d"))
+--    self.calendar_gui:SetCallback("OnClose", function(widget) AceGUI:Release(widget) end)
+--    self.calendar_gui:SetLayout("Fill")
+--  -- create tabs
+--    self.calendar_tab = AceGUI:Create("TabGroup")
+--    self.calendar_tab:SetLayout("List")
+--    self.calendar_tab:SetTabs({
+--      {text="Calendar", value="calendar"},
+--      {text="Options", value="options"}
+--    })
+--    self.calendar_tab:SetCallback("OnGroupSelected", function(container, event, selected_group_value)
+--      container:ReleaseChildren()
+--      if selected_group_value == "calendar" then
+--        print(selected_group_value)
+--        self:CalendarTabContent()
+--         --DrawGroup1(container)
+--      elseif selected_group_value == "options" then
+--        print(selected_group_value)
+--         --DrawGroup2(container)
+--      end
+--    end)
+--    self.calendar_tab:SelectTab("calendar")
+--    self.calendar_gui:AddChild(self.calendar_tab)
+--end
 
 function CG_Raid_Setup:UpdateCDSetup(setup, name, group, slot)
   group = tostring(group)
@@ -72,7 +209,6 @@ function CG_Raid_Setup:UpdateCDSetup(setup, name, group, slot)
   CG_DATA[setup].name_group[name] = {group = group, slot = slot}
 end
 
--- update raid setup option
 function CG_Raid_Setup:UpdateGroupSetup(name)
   local order_index = 0
   self.options.args[name] = {name = name, type = "group", args = {}}
@@ -129,7 +265,7 @@ function CG_Raid_Setup:UpdateGroupSetup(name)
       CG_DATA[name].current_member = m:lower()
       for player_name, rc in pairs(self.guild_member_info) do
         if player_name == m:lower() then
-          self:Print(m .. " is in guild.")
+          self:Print("Added"..m .. " in guild.")
           self:UpdateCDSetup(name, m:lower(), CG_DATA[name].current_g)
           CG_DATA[name].special_member = CG_DATA[name].special_member or {}
           if self.guild_member_info[m:lower()] ~= nil then
@@ -381,7 +517,6 @@ function CG_Raid_Setup:GetGuildInfo()
   CG_SELF.higher_guild_ranks = self.higher_guild_ranks
 end
 
--- construct top level options
 function CG_Raid_Setup:NewOptions()
   self.options = {name = app_display_name, handler = CG_Raid_Setup, type = "group", args = {}}
   local index = 0
@@ -516,10 +651,10 @@ end
 function CG_Raid_Setup:OnInitialize()
   if CG_SELF == {} then
     self:Print("need reload to make this work.")
-        --ReloadUI()
   end
   CG_DATA = CG_DATA or {}
   CG_SELF = CG_SELF or {}
+  CG_CALENDAR = CG_CALENDAR or {}
   self.my_name, _= UnitName("player")
   self.my_name = self.my_name:lower()
   self:GetGuildInfo()
@@ -532,10 +667,16 @@ function CG_Raid_Setup:OnInitialize()
   AceConfig:RegisterOptionsTable(self.import_options.name, self.import_options, {"cgc_import"})
   self.optionsFrame = AceConfigDialog:AddToBlizOptions(self.options.name, app_display_name)
   self.importFrame = AceConfigDialog:AddToBlizOptions(self.import_options.name, self.import_options.name)
+  --self:CalendarOptions()
   self:RegisterEvent("CHAT_MSG_WHISPER")
   self:RegisterEvent("CHAT_MSG_BN_WHISPER")
+  self:RegisterEvent("GROUP_ROSTER_UPDATE")
   self:RegisterChatCommand("cgc", "ChatCommand")
   self:Print("Initialized type /cgc for options")
+  --self:CalendarGUI()
+  self.invited = nil
+  self.r_grp = 1
+  self.r_slt = 1
 end
 
 function CG_Raid_Setup:ChatCommand(input)
@@ -548,6 +689,7 @@ function CG_Raid_Setup:ChatCommand(input)
   if input == "reset" then
     CG_DATA = nil
     CG_SELF = nil
+    CG_CALENDAR = nil
     ReloadUI()
     self:Print("CG Raid Setup has been reset.")
     return
@@ -613,6 +755,18 @@ function CG_Raid_Setup:CHAT_MSG_WHISPER(event, ...)
     get_name(select(2, ...)))
 end
 
+
+function CG_Raid_Setup:GROUP_ROSTER_UPDATE(event, ...)
+  for setup, args in pairs(CG_DATA) do
+    if args.enabled then
+      self:Print("Sorting " .. setup)
+      for i=1,40 do
+        self:RearrangeGroup(setup)
+      end
+    end
+  end
+end
+
 -- invite from BN whisper
 function CG_Raid_Setup:CHAT_MSG_BN_WHISPER(event, ...)
   local msg = select(1, ...)
@@ -646,8 +800,14 @@ end
 
 function CG_Raid_Setup:PutInGroup(setup, player_name, group)
   self:UpdateRaidInfo()
+
+  --local msg = string.format("INFO: fixing group %d.", group)
+  --self:Print(msg)
+
   -- do nothing if player is not in raid
   if self.current_raid_group[player_name] == nil then
+    local msg = string.format("INFO: %s is not in raid.", player_name)
+    self:Print(msg)
     return
   end
 
@@ -655,12 +815,16 @@ function CG_Raid_Setup:PutInGroup(setup, player_name, group)
 
   -- player is already in place
   if current.group == group then
+    --local msg = string.format("INFO: %s is already in %d.", player_name, group)
+    --self:Print(msg)
     return
   end
 
   -- move to empty slot
   if self.current_players_in_group[group] < 5 then
     SetRaidSubgroup(current.index, group)
+    local msg = string.format("INFO: %d has %d people.", group, self.current_players_in_group[group])
+    self:Print(msg)
     return
   end
 
@@ -677,23 +841,24 @@ end
 function CG_Raid_Setup:RearrangeGroup(setup)
   -- only works in raid
   if not IsInRaid() then
-    return
+    ConvertToRaid()
   end
-
-  for group=1,8 do
-    for slot=1,5 do
-      -- player_name wants to be placed in group slot
-      local player_name = CG_DATA[setup][tostring(group)][tostring(slot)]
-      if player_name ~= nil then
-        -- if player_name is in current raid, put him/her to the intended slot
-        self:PutInGroup(setup, player_name, group)
-      end
+  local player_name = CG_DATA[setup][tostring(self.r_grp)][tostring(self.r_slt)]
+  if player_name ~= nil then
+    self:PutInGroup(setup, player_name, self.r_grp)
+  end
+  self.r_slt = self.r_slt + 1
+  if self.r_slt > 5 then
+    self.r_slt = 1
+    self.r_grp = self.r_grp + 1
+    if self.r_grp > 8 then
+      self.r_grp = 1
     end
   end
 end
 
 function CG_Raid_Setup:InviteAll(setup)
-  ConvertToRaid()
+  self.invited=setup
   self:UpdateRaidInfo()
   for group=1,8 do
     for slot=1,5 do
