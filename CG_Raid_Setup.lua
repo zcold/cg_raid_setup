@@ -18,142 +18,6 @@ local function get_display(name)
   return "|c" .. color .. " "..name.."|r"
 end
 
---function CG_Raid_Setup:LastMonth()
---  if self.month == 1 then
---    self.year = self.year - 1
---    self.month = 12
---  else
---    self.month = self.month - 1
---  end
---  return string.format("%04d-%02d", self.year, self.month)
---end
-
---function CG_Raid_Setup:NextMonth()
---  if self.month == 12 then
---    self.year = self.year + 1
---    self.month = 1
---  else
---    self.month = self.month + 1
---  end
---  return string.format("%04d-%02d", self.year, self.month)
---end
-
---function CG_Raid_Setup:CreateMonthSelector()
---  local month_selection_group = AceGUI:Create("SimpleGroup")
---  local next_month_button = AceGUI:Create("Button")
---  local month_label = AceGUI:Create("Heading")
---  local last_month_button = AceGUI:Create("Button")
-
---  month_selection_group:SetWidth(320)
---  month_selection_group:SetLayout("Flow")
---  month_selection_group:AddChild(last_month_button)
---  month_selection_group:AddChild(month_label)
---  month_selection_group:AddChild(next_month_button)
-
---  month_label:SetText(date("%Y-%m"))
---  month_label:SetRelativeWidth(0.6)
-
---  last_month_button:SetText("<")
---  last_month_button:SetRelativeWidth(0.2)
---  last_month_button:SetCallback("OnClick", function(...)
---    month_label:SetText(self:LastMonth())
---  end)
---  next_month_button:SetText(">")
---  next_month_button:SetRelativeWidth(0.2)
---  next_month_button:SetCallback("OnClick", function(...)
---    month_label:SetText(self:NextMonth())
---  end)
---  self.calendar_tab:AddChild(month_selection_group)
---end
-
---function CG_Raid_Setup:CalendarTabContent()
-
---  self:CreateMonthSelector()
-
---  local calendar_content = AceGUI:Create("SimpleGroup")
---  calendar_content:SetLayout("Flow")
---  calendar_content:SetWidth(320)
-
---  local header = AceGUI:Create("SimpleGroup")
---  header:SetLayout("Flow")
---  header:SetRelativeWidth(1)
---  for _, v in ipairs(self.weekdays) do
---    local _label = AceGUI:Create("Label")
---    _label:SetText(v)
---    _label:SetRelativeWidth(0.14)
---    header:AddChild(_label)
---  end
---  calendar_content:AddChild(header)
-
---  self.monthdays = self:GetMonthDays()
---  local day = {}
---  local today = date("%w")+1
-
---  for i=1, self.monthdays do
---    day[i] = (((date("%d")-i) % 7) + today) % 7
---    print(day[i])
---  end
---  self.calendar_tab:AddChild(calendar_content)
---end
-
---function CG_Raid_Setup:GetMonthDays()
---  local monthdays = {
---    31, --  1
---    28, --  2
---    31, --  3
---    30, --  4
---    31, --  5
---    30, --  6
---    31, --  7
---    31, --  8
---    30, --  9
---    31, -- 10
---    30, -- 11
---    31, -- 12
---  }
---  self.year = tonumber(self.year)
---  if (self.year % 100 == 0) and (self.year % 400 == 0) then
---    monthdays[2] = 29
---  elseif (self.year % 100 ~= 0) and (self.year % 4 == 0) then
---    monthdays[2] = 29
---  end
---  return monthdays[tonumber(self.month)]
---end
-
---function CG_Raid_Setup:CalendarGUI()
---  self.year = date("%Y")
---  self.month = date("%m")
---  self.weekdays = {'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'}
-
---  -- create frame
---    self.calendar_gui = AceGUI:Create("Frame")
---    self.calendar_gui:SetTitle("CG_Calendar")
---    self.calendar_gui:SetWidth(1024)
---    self.calendar_gui:SetStatusText("Current date "..date("%Y-%m-%d"))
---    self.calendar_gui:SetCallback("OnClose", function(widget) AceGUI:Release(widget) end)
---    self.calendar_gui:SetLayout("Fill")
---  -- create tabs
---    self.calendar_tab = AceGUI:Create("TabGroup")
---    self.calendar_tab:SetLayout("List")
---    self.calendar_tab:SetTabs({
---      {text="Calendar", value="calendar"},
---      {text="Options", value="options"}
---    })
---    self.calendar_tab:SetCallback("OnGroupSelected", function(container, event, selected_group_value)
---      container:ReleaseChildren()
---      if selected_group_value == "calendar" then
---        print(selected_group_value)
---        self:CalendarTabContent()
---         --DrawGroup1(container)
---      elseif selected_group_value == "options" then
---        print(selected_group_value)
---         --DrawGroup2(container)
---      end
---    end)
---    self.calendar_tab:SelectTab("calendar")
---    self.calendar_gui:AddChild(self.calendar_tab)
---end
-
 function CG_Raid_Setup:UpdateCDSetup(setup, name, group, slot)
   group = tostring(group)
   slot = slot or -1
@@ -670,7 +534,6 @@ function CG_Raid_Setup:OnInitialize()
   --self:CalendarOptions()
   self:RegisterEvent("CHAT_MSG_WHISPER")
   self:RegisterEvent("CHAT_MSG_BN_WHISPER")
-  self:RegisterEvent("GROUP_ROSTER_UPDATE")
   self:RegisterChatCommand("cgc", "ChatCommand")
   self:Print("Initialized type /cgc for options")
   --self:CalendarGUI()
@@ -753,18 +616,6 @@ function CG_Raid_Setup:CHAT_MSG_WHISPER(event, ...)
   self:InviteGroup(
     select(1, ...),
     get_name(select(2, ...)))
-end
-
-
-function CG_Raid_Setup:GROUP_ROSTER_UPDATE(event, ...)
-  for setup, args in pairs(CG_DATA) do
-    if args.enabled then
-      self:Print("Sorting " .. setup)
-      for i=1,40 do
-        self:RearrangeGroup(setup)
-      end
-    end
-  end
 end
 
 -- invite from BN whisper
